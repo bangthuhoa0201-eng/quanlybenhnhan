@@ -1,5 +1,4 @@
-﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -20,7 +19,7 @@
 
         th, td {
             border: 1px solid #ccc;
-            padding: 10px;
+            padding: 8px;
             text-align: center;
         }
 
@@ -36,12 +35,12 @@
         }
 
         input, select {
-            padding: 8px;
-            margin: 5px;
+            padding: 6px;
+            margin: 4px;
         }
 
         button {
-            padding: 8px 12px;
+            padding: 6px 10px;
             border: none;
             cursor: pointer;
             color: white;
@@ -58,18 +57,22 @@
         .sua {
             background: orange;
         }
+
+        .lichsu {
+            background: blue;
+        }
     </style>
 </head>
 
 <body>
 
-    <h1>Hệ thống quản lý bệnh nhân</h1>
+    <h2>🏥 Hệ thống quản lý bệnh nhân</h2>
 
-    <input id="timkiem" type="text" placeholder="Tìm bệnh nhân..." onkeyup="timBenhNhan()">
+    <input id="timkiem" placeholder="Tìm bệnh nhân..." onkeyup="timBenhNhan()">
 
     <form onsubmit="themHoacSua(event)">
 
-        <input id="ten" type="text" placeholder="Tên bệnh nhân" required>
+        <input id="ten" placeholder="Tên bệnh nhân" required>
 
         <input id="tuoi" type="number" placeholder="Tuổi" required>
 
@@ -78,145 +81,205 @@
             <option value="th">Tháng (th)</option>
         </select>
 
-        <input id="ngaykham" type="date" required>
-
-        <input id="chuandoan" type="text" placeholder="Chuẩn đoán" required>
+        <input id="chieucao" type="number" placeholder="Chiều cao (cm)" required>
+        <input id="cannang" type="number" placeholder="Cân nặng (kg)" required>
 
         <select id="gioitinh">
-            <option value="Nam">Nam</option>
-            <option value="Nữ">Nữ</option>
-            <option value="Khác">Khác</option>
+            <option>Nam</option>
+            <option>Nữ</option>
+            <option>Khác</option>
         </select>
 
-        <input id="thuoc" type="text" placeholder="Thuốc điều trị" required>
+        <input id="ngaykham" type="date" required>
+        <input id="chuandoan" placeholder="Chuẩn đoán" required>
+        <input id="thuoc" placeholder="Thuốc điều trị" required>
 
-        <button id="nutThem" class="them" type="submit">Thêm</button>
+        <button id="nutThem" class="them">Thêm</button>
 
     </form>
 
     <table id="bangBenhNhan">
+
         <tr>
             <th>Tên</th>
             <th>Tuổi</th>
+            <th>Chiều cao</th>
+            <th>Cân nặng</th>
             <th>Ngày khám</th>
             <th>Chuẩn đoán</th>
             <th>Giới tính</th>
-            <th>Thuốc điều trị</th>
+            <th>Thuốc</th>
+            <th>Lịch sử</th>
             <th>Sửa</th>
             <th>Xóa</th>
         </tr>
+
     </table>
 
     <script>
-        const { ipcRenderer } = require('electron');
+
         let danhSach = [];
         let indexDangSua = -1;
 
         window.onload = function () {
+
             let data = localStorage.getItem("benhnhan");
 
             if (data) {
                 danhSach = JSON.parse(data);
                 hienThi();
             }
+
         }
 
-        async function themHoacSua(event) {
+        function themHoacSua(event) {
+
             event.preventDefault();
 
             let bn = {
                 ten: ten.value,
-                tuoi: tuoi.value + " " + donvituoi.value,
-                ngaykham: ngaykham.value,
-                chuandoan: chuandoan.value,
+                tuoi: tuoi.value,
+                donvi: donvituoi.value,
+                chieucao: chieucao.value,
+                cannang: cannang.value,
                 gioitinh: gioitinh.value,
-                thuoc: thuoc.value
+                lichsu: [
+                    {
+                        ngaykham: ngaykham.value,
+                        chuandoan: chuandoan.value,
+                        thuoc: thuoc.value
+                    }
+                ]
             };
 
-            await ipcRenderer.send("them-benh-nhan", bn);
-
-            hienThi();
-            document.querySelector("form").reset();
-        }
-
             if (indexDangSua === -1) {
+
                 danhSach.push(bn);
+
             } else {
-                danhSach[indexDangSua] = bn;
+
+                danhSach[indexDangSua].lichsu.push({
+                    ngaykham: ngaykham.value,
+                    chuandoan: chuandoan.value,
+                    thuoc: thuoc.value
+                });
+
                 indexDangSua = -1;
                 nutThem.innerText = "Thêm";
             }
 
-            localStorage.setItem("benhnhan", JSON.stringify(danhSach));
-
+            luuDuLieu();
             hienThi();
             document.querySelector("form").reset();
+
         }
 
         function hienThi() {
+
             let bang = document.getElementById("bangBenhNhan");
 
             bang.innerHTML = `
-                <tr>
-                    <th>Tên</th>
-                    <th>Tuổi</th>
-                    <th>Ngày khám</th>
-                    <th>Chuẩn đoán</th>
-                    <th>Giới tính</th>
-                    <th>Thuốc điều trị</th>
-                    <th>Sửa</th>
-                    <th>Xóa</th>
-                </tr>`;
+<tr>
+<th>Tên</th>
+<th>Tuổi</th>
+<th>Chiều cao</th>
+<th>Cân nặng</th>
+<th>Ngày khám</th>
+<th>Chuẩn đoán</th>
+<th>Giới tính</th>
+<th>Thuốc</th>
+<th>Lịch sử</th>
+<th>Sửa</th>
+<th>Xóa</th>
+</tr>`;
 
             danhSach.forEach((bn, index) => {
+
+                let lanCuoi = bn.lichsu[bn.lichsu.length - 1];
 
                 let hang = bang.insertRow();
 
                 hang.insertCell(0).innerText = bn.ten;
                 hang.insertCell(1).innerText = bn.tuoi + " " + bn.donvi;
-                hang.insertCell(2).innerText = bn.ngaykham;
-                hang.insertCell(3).innerText = bn.chuandoan;
-                hang.insertCell(4).innerText = bn.gioitinh;
-                hang.insertCell(5).innerText = bn.thuoc;
+                hang.insertCell(2).innerText = bn.chieucao + " cm";
+                hang.insertCell(3).innerText = bn.cannang + " kg";
+                hang.insertCell(4).innerText = lanCuoi.ngaykham;
+                hang.insertCell(5).innerText = lanCuoi.chuandoan;
+                hang.insertCell(6).innerText = bn.gioitinh;
+                hang.insertCell(7).innerText = lanCuoi.thuoc;
+
+                let nutLS = document.createElement("button");
+                nutLS.innerText = "📜";
+                nutLS.className = "lichsu";
+                nutLS.onclick = () => xemLichSu(index);
+                hang.insertCell(8).appendChild(nutLS);
 
                 let nutSua = document.createElement("button");
                 nutSua.innerText = "✏️";
                 nutSua.className = "sua";
                 nutSua.onclick = () => suaBenhNhan(index);
-                hang.insertCell(6).appendChild(nutSua);
+                hang.insertCell(9).appendChild(nutSua);
 
                 let nutXoa = document.createElement("button");
                 nutXoa.innerText = "❌";
                 nutXoa.className = "xoa";
                 nutXoa.onclick = () => xoaBenhNhan(index);
-                hang.insertCell(7).appendChild(nutXoa);
+                hang.insertCell(10).appendChild(nutXoa);
+
             });
+
         }
 
         function suaBenhNhan(index) {
+
             let bn = danhSach[index];
+
+            let lanCuoi = bn.lichsu[bn.lichsu.length - 1];
 
             ten.value = bn.ten;
             tuoi.value = bn.tuoi;
             donvituoi.value = bn.donvi;
-            ngaykham.value = bn.ngaykham;
-            chuandoan.value = bn.chuandoan;
+            chieucao.value = bn.chieucao;
+            cannang.value = bn.cannang;
             gioitinh.value = bn.gioitinh;
-            thuoc.value = bn.thuoc;
+
+            ngaykham.value = lanCuoi.ngaykham;
+            chuandoan.value = lanCuoi.chuandoan;
+            thuoc.value = lanCuoi.thuoc;
 
             indexDangSua = index;
             nutThem.innerText = "Cập nhật";
+
         }
 
         function xoaBenhNhan(index) {
-            if (confirm("Bạn có chắc muốn xóa không?")) {
+
+            if (confirm("Xóa bệnh nhân?")) {
                 danhSach.splice(index, 1);
-                localStorage.setItem("benhnhan", JSON.stringify(danhSach));
+                luuDuLieu();
                 hienThi();
             }
+
+        }
+
+        function xemLichSu(index) {
+
+            let bn = danhSach[index];
+
+            let text = "Lịch sử khám của " + bn.ten + "\n\n";
+
+            bn.lichsu.forEach(ls => {
+                text += "Ngày: " + ls.ngaykham + "\n";
+                text += "Chuẩn đoán: " + ls.chuandoan + "\n";
+                text += "Thuốc: " + ls.thuoc + "\n\n";
+            });
+
+            alert(text);
+
         }
 
         function timBenhNhan() {
+
             let input = timkiem.value.toLowerCase();
             let rows = document.querySelectorAll("#bangBenhNhan tr");
 
@@ -225,7 +288,13 @@
 
                 let ten = row.cells[0].innerText.toLowerCase();
                 row.style.display = ten.includes(input) ? "" : "none";
+
             });
+
+        }
+
+        function luuDuLieu() {
+            localStorage.setItem("benhnhan", JSON.stringify(danhSach));
         }
 
     </script>
